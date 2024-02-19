@@ -1,5 +1,5 @@
 # table-toolkit
-A utools project that use table toolkit
+A utools project that show database(mysql) table DDL and data quickly.
 
 ## Project Setup
 
