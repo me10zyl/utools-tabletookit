@@ -1,0 +1,11 @@
+.line {
+    width: 500px;
+    padding-left: 10px;
+    padding-bottom: 10px;
+}
+.sheet{
+    padding: 0 0 30px 10px;
+}
+.list{
+    margin: 10px 0 10px 10px;
+}

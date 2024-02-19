@@ -1,0 +1,23 @@
+{
+  "main": "index.html",
+  "logo": "logo.png",
+  "preload": "preload.js",
+  "features": [
+    {
+      "code": "table",
+      "explain": "打开数据库表信息",
+      "cmds": [
+        "table",
+        {
+          "type": "over",
+          "label": "table",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      ]
+    }
+  ],
+  "development": {
+    "main": "http://localhost:5173/"
+  }
+}
