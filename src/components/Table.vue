@@ -126,6 +126,9 @@ export default {
             let newRow = [];
             this.tableData.datum.push(newRow);
             for (let colName in row) {
+              if(colName == '_poolId'){
+                continue;
+              }
               let colValue = row[colName];
               if (!pushColNames) {
                 this.tableData.columnNames.push(colName)
