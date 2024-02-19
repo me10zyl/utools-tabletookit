@@ -1,4 +1,5 @@
 # table-toolkit
+A utools project that use table toolkit
 
 ## Project Setup
 
@@ -19,3 +20,6 @@ npm run dev
 ```sh
 npm run build
 ```
+### License
+CopySource Must Retain My Agreement.
+[GPL](https://www.gnu.org/licenses/gpl-3.0.txt)
