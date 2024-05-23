@@ -1,5 +1,6 @@
 <script>
 import table from "@/components/Table.vue";
+import storage from "@/util/storage.js";
 
 export default {
   name: 'TableConf',
@@ -14,6 +15,8 @@ export default {
       snackbarText: '',
       showSheet: false,
       showNew: true,
+      showList: true,
+      _id: null,
       host: '',
       port: '3306',
       user: '',
@@ -41,11 +44,33 @@ export default {
     }
   },
   methods: {
+    clickEdit(target) {
+      let dbConf = storage.findDbConf(target.id);
+      console.log('dbConf', dbConf)
+      if (dbConf) {
+        this._id = target.id
+        this.host = dbConf.host;
+        this.port = dbConf.port;
+        this.user = dbConf.user;
+        this.password = dbConf.password;
+        this.database = dbConf.database;
+        this.showSheet = true;
+        this.showNew = false;
+        this.showList = false;
+      }
+    },
     clickNew() {
       this.showSheet = true;
       this.showNew = false;
+      this.showList = false;
+      this._id = null;
+      this.host = null;
+      this.port = 3306;
+      this.user = null;
+      this.password = null;
+      this.database = null;
     },
-    removeConf(target, i){
+    removeConf(target, i) {
       // console.log('removeConf', target)
       let dbConfs = utools.dbStorage.getItem('dbConfs');
       let dbConf = dbConfs[i]
@@ -59,31 +84,43 @@ export default {
       if (!dbConfs) {
         dbConfs = [];
       }
-      if(!this.host || !this.port){
-          this.snackbarText = '主机名或端口不能为空';
-          this.snackbar = true;
-          return
+      if (!this.host || !this.port) {
+        this.snackbarText = '主机名或端口不能为空';
+        this.snackbar = true;
+        return
       }
-      dbConfs.push({
-        _id: new Date().getTime(),
-        host: this.host,
-        port: this.port,
-        user: this.user,
-        password: this.password
-      });
+      if (this._id) {
+        let dbConf = dbConfs.find(e=>e._id === this._id)
+        dbConf.host = this.host;
+        dbConf.user = this.user;
+        dbConf.password = this.password;
+        dbConf.port = this.port;
+        dbConf.database = this.database;
+      } else {
+        dbConfs.push({
+          _id: new Date().getTime(),
+          host: this.host,
+          port: this.port,
+          user: this.user,
+          password: this.password,
+          database: this.database
+        });
+      }
       utools.dbStorage.setItem('dbConfs', dbConfs);
       this.showSheet = false;
       this.showNew = true;
+      this.showList = true;
       this.refreshList()
     },
-    refreshList(){
+    refreshList() {
       // console.log('refreshList')
       this.items.splice(0, this.items.length)
       let dbConfs = utools.dbStorage.getItem('dbConfs');
       if (dbConfs && dbConfs.length > 0) {
-        dbConfs.forEach((db)=>{
+        dbConfs.forEach((db) => {
           this.items.push({
-            title:  db.host + ':' + db.port,
+            id: db._id,
+            title: db.host + ':' + db.port,
             icon: 'mdi-database',
             closeIcon: 'mdi-close'
           })
@@ -95,7 +132,7 @@ export default {
     this.refreshList();
   },
   activated() {
-
+    console.log('activ')
   }
 }
 </script>
@@ -105,7 +142,7 @@ export default {
     <v-card
         class="list"
         max-width="300"
-        v-if="items.length > 0"
+        v-if="showList && items.length > 0"
     >
       <v-list :items="items" density="compact">
         <v-list-item
@@ -114,18 +151,19 @@ export default {
             :value="item"
             color="primary"
             rounded="xl"
+            @click="clickEdit(item)"
         >
           <template v-slot:prepend>
-            <v-icon :icon="item.icon" />
+            <v-icon :icon="item.icon"/>
           </template>
 
           <template v-slot:default>
-            {{item.title}}
+            {{ item.title }}
           </template>
 
 
           <template v-slot:append>
-            <v-icon :icon="item.closeIcon" @click="removeConf(item, i)" />
+            <v-icon :icon="item.closeIcon" @click="removeConf(item, i)"/>
           </template>
         </v-list-item>
       </v-list>
@@ -135,7 +173,7 @@ export default {
       暂无数据库配置，点击下方新增配置
     </div>
     <div class="line" v-if="showNew">
-      <v-btn prepend-icon="mdi-plus-box" class="mt-2" @click="clickNew">新增数据库配置</v-btn>
+      <v-btn prepend-icon="mdi-plus-box" class="mt-2" @click="clickNew">新增一条数据库配置</v-btn>
     </div>
 
     <v-sheet width="500" class="mx-0 sheet" v-if="showSheet">
@@ -160,10 +198,15 @@ export default {
             type="password"
             label="密码"
         ></v-text-field>
+        <v-text-field
+            v-model="database"
+            label="数据库"
+        ></v-text-field>
 
         <div>
           <v-btn type="submit" prepend-icon="mdi-hand-okay" block class="mt-2" width="100" @click="save">保存</v-btn>
-          <v-btn prepend-icon="mdi-cancel"  block class="mt-2" width="100" @click="showNew=true;showSheet=false">取消</v-btn>
+          <v-btn prepend-icon="mdi-cancel" block class="mt-2" width="100" @click="showNew=true;showSheet=false;showList=true">取消
+          </v-btn>
         </div>
       </v-form>
     </v-sheet>

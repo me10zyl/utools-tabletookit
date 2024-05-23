@@ -1,6 +1,8 @@
 <script>
 import {basicSetup, EditorView} from "codemirror"
 import {sql} from "@codemirror/lang-sql"
+import {bus} from "@/js/queue.js";
+import lodash from 'lodash'
 
 export default {
   name: 'Table',
@@ -70,8 +72,44 @@ export default {
     }
   },
   methods: {
+    inputChanged(queryString) {
+      if (queryString != null && queryString.trim().length > 0) {
+        this.errorText = null
+        this.selectItem = {}
+        mysql.query(`select 1`, (err) => {
+          if (err) {
+            this.errorText = err;
+          }
+        })
+
+        if (queryString && queryString.trim().length > 0) {
+          queryString = queryString.trim()
+          mysql.query(`select *
+                     from information_schema.TABLES
+                     where TABLE_TYPE = 'BASE TABLE'
+                       and TABLE_SCHEMA != 'performance_schema'
+                       and TABLE_SCHEMA != 'mysql'
+                       and TABLE_SCHEMA != 'information_schema'
+                       and TABLE_NAME like CONCAT('%', '${queryString}', '%')`, (err, result, fields) => {
+            this.tables.splice(0, this.tables.length)
+            if (err) {
+              this.errorText = err;
+              return
+            }
+            result.forEach((row) => {
+              this.tables.push({
+                tableName: row.TABLE_NAME,
+                dbName: row.TABLE_SCHEMA,
+                poolId: row._poolId
+              })
+            })
+          })
+        } else {
+          this.tables.splice(0, this.tables.length)
+        }
+      }
+    },
     judgeConf() {
-      console.log('judgeConf')
       let dbConfs = utools.dbStorage.getItem('dbConfs');
       if (!dbConfs || dbConfs.length === 0) {
         this.noConf = true;
@@ -126,7 +164,7 @@ export default {
             let newRow = [];
             this.tableData.datum.push(newRow);
             for (let colName in row) {
-              if(colName == '_poolId'){
+              if (colName == '_poolId') {
                 continue;
               }
               let colValue = row[colName];
@@ -169,50 +207,23 @@ export default {
   updated() {
     // console.log('update')
   },
-  changeTab() {
-    this.judgeConf();
-    //window.onInputChanged(this.lastQueryString)
-    //this.rebuildEditorView()
-  },
+
   mounted() {
     // console.log('mounted')
     this.judgeConf();
-    window.onInputChanged = (queryString) => {
-      this.errorText = null
-      this.lastQueryString = queryString
-      this.selectItem = {}
-      mysql.query(`select 1`, (err) => {
-        if (err) {
-          this.errorText = err;
-        }
-      })
 
-      if (queryString && queryString.trim().length > 0) {
-        queryString = queryString.trim()
-        mysql.query(`select *
-                     from information_schema.TABLES
-                     where TABLE_TYPE = 'BASE TABLE'
-                       and TABLE_SCHEMA != 'performance_schema'
-                       and TABLE_SCHEMA != 'mysql'
-                       and TABLE_SCHEMA != 'information_schema'
-                       and TABLE_NAME like CONCAT('%', '${queryString}', '%')`, (err, result, fields) => {
-          this.tables.splice(0, this.tables.length)
-          if (err) {
-            this.errorText = err;
-            return
-          }
-          result.forEach((row) => {
-            this.tables.push({
-              tableName: row.TABLE_NAME,
-              dbName: row.TABLE_SCHEMA,
-              poolId: row._poolId
-            })
-          })
-        })
-      } else {
-        this.tables.splice(0, this.tables.length)
+    const debouncedFunc = lodash.debounce((text)=>{
+      console.log('debounce ok')
+      this.inputChanged(text)
+    }, 500);
+
+    bus.on('_inputChanged_', ( obj)=>{
+      console.log('table: bus.on(onInputChanged)')
+      const {tab, text} = obj;
+      if(tab === 'table'){
+        debouncedFunc(text)
       }
-    }
+    })
   }
 }
 

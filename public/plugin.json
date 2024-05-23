@@ -15,6 +15,32 @@
           "maxLength": 100
         }
       ]
+    },
+    {
+      "code": "table-conf",
+      "explain": "打开数据库表配置",
+      "cmds": [
+        "table-conf",
+        {
+          "type": "over",
+          "label": "table-conf",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      ]
+    },
+    {
+      "code": "table-quick-query-conf",
+      "explain": "打开数据库表配置",
+      "cmds": [
+        "table-quick-query-conf",
+        {
+          "type": "over",
+          "label": "table-quick-query-conf",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      ]
     }
   ],
   "development": {

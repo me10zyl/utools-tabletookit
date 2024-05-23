@@ -1,9 +1,18 @@
 console.log('init preload.js')
-window.onSubInputChanged = function ({text}) {
-    window.onInputChanged(text);
-}
-utools.onPluginEnter(() => {
-    utools.setSubInput(onSubInputChanged, '搜索表名称', true);
+//{code: 'table-conf', type: 'text', payload: 'table-conf'}
+utools.onPluginEnter((val) => {
+    console.log(val, 'enterPlugin')
+    if(val.code === 'table') {
+        utools.setSubInput(({text}) => {
+            window.onInputChanged(text);
+        }, '搜索表名称', true);
+    } else if (val.code !== 'table-conf' && val.code !== 'table-conf' && val.code !== 'table-quick-query-conf') {
+        utools.setSubInput(({text}) => {
+            window.onInputChanged(text);
+        }, 'SQL预查询参数', true);
+    }
+    console.log('preload.js: change window.code=' + val.code)
+    window.onChangeCode(val.code);
 })
 const mysql = require('mysql2');
 let pools = [];
@@ -20,7 +29,8 @@ const createPools = () => {
             let pool = mysql.createPool(conf);
             pools.push({
                 _id: id,
-                pool: pool
+                pool: pool,
+                conf: conf
             })
         }
     })
@@ -63,8 +73,9 @@ window.mysql = {
                             return
                         }
                         connection.query(sql, null, function (err, results, fields) {
-                            console.log('query sql:', sql, pool._id, results)
+                            console.log('query sql:', err, sql, pool.conf, results,fields)
                             resolve({
+                                error: err,
                                 results: results,
                                 fields: fields,
                                 poolId: pool._id
@@ -75,7 +86,7 @@ window.mysql = {
                 });
             })
         })).then((results) => {
-            callback(null, results.flatMap(e => {
+            callback(results.length > 0 ? results[0].error : null, results.flatMap(e => {
                 let results1 = e.results;
                 if(results1) {
                     results1.forEach(ee => {

@@ -1,24 +1,87 @@
-<script>
+<script setup>
 import Table from "@/components/Table.vue";
 import TableConf from "@/components/TableConf.vue";
+import TableQuickQueryConf from "@/components/TableQuickQueryConf.vue";
+import hook from "@/util/hook.js";
+import {computed, getCurrentInstance, ref, watch, watchEffect} from "vue";
+import {bus} from "@/js/queue.js";
 import TableQuickQuery from "@/components/TableQuickQuery.vue";
 
-export default {
-  name: 'MainBoard',
-  components: {TableConf, TableQuickQuery, Table},
-  data() {
-    return {
-      tab: null
-    }
+const currentTab = ref('table')
+const tabs = [
+  {
+    name: 'table',
+    component: Table,
+    code: 'table'
   },
-  methods: {
-    changeTab(val) {
-      // console.log('changeTab', this.$refs[val])
-      if (this.$refs[val] && typeof this.$refs[val].$options.changeTab === 'function') {
-        let $options = this.$refs[val].$options;
-        $options.changeTab.call(this.$refs[val], val);
+  {
+    name: 'tableConf',
+    component: TableConf,
+    code: 'table-conf'
+  },
+  {
+    name: 'tableQuickQueryConf',
+    component: TableQuickQueryConf,
+    code: 'table-quick-query-conf'
+  },
+  {
+    name: 'tableQuickQuery',
+    component: TableQuickQuery,
+    code: 'table-quick-query'
+  }
+]
+
+const instance = getCurrentInstance();
+const ctx = getCurrentInstance().ctx;
+function getUtoolsLabelByTab(tab) {
+  let filter = tabs.filter(e=>e.name===tab)
+  if(filter.length > 0){
+    return filter[0].code
+  }
+}
+function getTableNameByCode(code) {
+  console.log('tabs', tabs)
+  let filter = tabs.filter(e=>e.code===code)
+  if(filter.length > 0){
+    return filter[0].name
+  }
+  return 'tableQuickQuery'
+}
+hook.reloadFeatures()
+//输入改变
+window.onInputChanged = (text) => {
+  console.log('MainBoard: onInputChanged:', text)
+  bus.emit('_inputChanged_', {'tab': currentTab.value, 'text': text})
+}
+//CODE改变
+window.onChangeCode = (code) => {
+  console.log('MainBoard:window.onChangeCode', code)
+  window.utoolsCode = code;
+  currentTab.value = getTableNameByCode(code)
+  if(currentTab.value === 'tableQuickQuery'){
+    window.utoolsLastTableQuickQueryCode = code;
+  }
+  console.log('currentTab', currentTab.value)
+  bus.emit('_changeCode_', {'tab': currentTab.value, 'code': code})
+}
+
+
+//切换TAB
+const changeTab = (val) => {
+  console.log('changeTab', val)
+  utools.removeSubInput();
+  let label = getUtoolsLabelByTab(val)
+  if (label) {
+    if(label === 'table-quick-query'){
+      if(window.utoolsLastTableQuickQueryCode) {
+        label = window.utoolsLastTableQuickQueryCode
+      }else{
+        return
       }
     }
+    let a = ['SQL快速查看表信息', 'table-conf']
+    a[1] = label
+    utools.redirect(a)
   }
 }
 </script>
@@ -29,12 +92,13 @@ export default {
       <v-tabs
           bg-color="primary"
           @update:model-value="changeTab"
-          v-model="tab">
+          v-model="currentTab">
         <v-tab value="table">表结构查询</v-tab>
-        <v-tab value="tableQuickQuery">
+        <v-tab value="tableQuickQuery">预查询结果</v-tab>
+        <v-tab value="tableQuickQueryConf">
           <v-tooltip text="构建快速查询SQL：如根据某个表的条件快速查询某个表的数据">
             <template v-slot:activator="{ props }">
-              <span v-bind="props">预查询</span>
+              <span v-bind="props">预查询配置</span>
             </template>
           </v-tooltip>
         </v-tab>
@@ -42,17 +106,12 @@ export default {
       </v-tabs>
 
       <v-card-text>
-        <v-window v-model="tab">
-          <v-window-item value="table">
-            <Table ref="table"/>
+        <v-window v-model="currentTab">
+          <v-window-item v-for="tab in tabs" :key="tab.name" :value="tab.name">
+            <keep-alive>
+              <component :is="tab.component"/>
+            </keep-alive>
           </v-window-item>
-          <v-window-item value="tableConf">
-            <TableConf ref="tableConf"/>
-          </v-window-item>
-          <v-window-item value="tableQuickQuery">
-            <TableQuickQuery ref="tableQuickQuery"/>
-          </v-window-item>
-
         </v-window>
       </v-card-text>
     </v-card>
