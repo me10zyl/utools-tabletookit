@@ -120,7 +120,7 @@ export default {
         dbConfs.forEach((db) => {
           this.items.push({
             id: db._id,
-            title: db.host + ':' + db.port,
+            title: db.user + '@' + db.host + ':' + db.port,
             icon: 'mdi-database',
             closeIcon: 'mdi-close'
           })
@@ -141,7 +141,7 @@ export default {
   <div>
     <v-card
         class="list"
-        max-width="300"
+        max-width="360"
         v-if="showList && items.length > 0"
     >
       <v-list :items="items" density="compact">

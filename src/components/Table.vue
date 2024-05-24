@@ -45,12 +45,12 @@ export default {
           text: this.errorText
         }
       }
-      if (this.tables.length === 0) {
-        if (this.lastQueryString === '') {
-          return {
-            text: '请输入表名进行搜索'
-          }
+      if (this.lastQueryString === '') {
+        return {
+          text: '请输入表名进行搜索'
         }
+      }
+      if (this.tables.length === 0) {
         return {
           text: '无表结构数据，搜索关键字:' + this.lastQueryString
         }
@@ -215,12 +215,15 @@ export default {
     const debouncedFunc = lodash.debounce((text)=>{
       console.log('debounce ok')
       this.inputChanged(text)
-    }, 500);
+    }, 300);
 
     bus.on('_inputChanged_', ( obj)=>{
       console.log('table: bus.on(onInputChanged)')
       const {tab, text} = obj;
-      if(tab === 'table'){
+      this.lastQueryString = text
+      if(text === ''){
+        this.tables.splice(0, this.tables.length)
+      }else {
         debouncedFunc(text)
       }
     })

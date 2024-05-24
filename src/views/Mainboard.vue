@@ -51,6 +51,7 @@ hook.reloadFeatures()
 //输入改变
 window.onInputChanged = (text) => {
   console.log('MainBoard: onInputChanged:', text)
+  window.utoolsInput = text;
   bus.emit('_inputChanged_', {'tab': currentTab.value, 'text': text})
 }
 //CODE改变
@@ -87,8 +88,8 @@ const changeTab = (val) => {
 </script>
 
 <template>
-  <div>
-    <v-card>
+  <div class="main-board">
+    <v-card style="height: 100vh">
       <v-tabs
           bg-color="primary"
           @update:model-value="changeTab"
@@ -105,7 +106,7 @@ const changeTab = (val) => {
         <v-tab value="tableConf">数据库配置</v-tab>
       </v-tabs>
 
-      <v-card-text>
+      <v-card-text class="main">
         <v-window v-model="currentTab">
           <v-window-item v-for="tab in tabs" :key="tab.name" :value="tab.name">
             <keep-alive>
@@ -117,3 +118,9 @@ const changeTab = (val) => {
     </v-card>
   </div>
 </template>
+
+<style scoped>
+.main-board{
+  height: 100vh;
+}
+</style>

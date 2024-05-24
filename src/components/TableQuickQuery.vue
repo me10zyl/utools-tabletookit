@@ -2,33 +2,34 @@
 import storage from "@/util/storage.js";
 import {bus} from "@/js/queue.js";
 import SQLTable from "@/components/SQLTable.vue";
-import {onActivated, ref} from "vue";
+import {onActivated, reactive, ref, toRefs} from "vue";
 import _ from 'lodash'
-
 const result = ref([])
 const fields = ref([])
 const sql = ref()
 const errText = ref()
-const size = ref(20)
-const page = ref(1)
+const count = ref(0)
+
+let page = 1;
+let size = 10;
 
 function reset(){
-  console.log('reset')
-  result.value.splice(0, result.value.length)
-  fields.value.splice(0, fields.value.length)
   errText.value = ''
 }
-function rebuildSQL(sql){
+function rebuildSQL(sql, page, size){
     if(!sql.includes('limit')){
-       sql += ` limit ${(page.value - 1) * size.value}, ${size.value}`
+       sql += ` limit ${(page - 1) * size}, ${size}`
     }
     return sql
 }
-const queryData = (code, params) => {
+function countSQL(sql1) {
+  return `select count(*) from (${sql1.replace(/limit.+/, '')}) as t`;
+}
+const queryData = (code, params, page, size) => {
   if(!code){
     return;
   }
-  console.log('startQueryData,code=', code)
+  console.log('startQueryData,code', code, page,size)
   let list = storage.quickQueryStore().getList()
   console.log(list, 'list')
   let filter = list.filter(e => e.keyword === code.trim());
@@ -42,40 +43,46 @@ const queryData = (code, params) => {
   sql.value = sql1
   if(sql1.includes('{}')){
     if(!params){
-      console.log('no params')
-      return;
+      sql1 = sql1.replace(/where.+/, '')
     }else{
-      sql1 = sql1.replace('{}', params);
+      sql1 = sql1.replaceAll('{}', params);
       console.log('replaced', sql1)
     }
   }
   console.log('queryData', sql1)
   sql.value = sql1
-  mysql.query(rebuildSQL(sql1), (err, result1, fields1) => {
+  mysql.query(rebuildSQL(sql1, page, size), (err, result1, fields1) => {
     if(err){
-      console.log('errText', err)
       errText.value = err
+      result.value = []
+      fields.value = []
       return
     }else{
       errText.value = null
     }
-    console.log('result1', result1)
     if(result1 && fields1) {
-      console.log('result2222')
-      result.value = result1;
-      fields.value = fields1;
+      mysql.query(countSQL(sql1), (err2, result2, fields2)=>{
+        if(err2){
+          errText.value = err2
+          return
+        }else{
+          errText.value = null
+        }
+        count.value = result2[0]['count(*)']
+        result.value = result1;
+        fields.value = fields1;
+        console.log('final: count=', count.value)
+      }, filter[0].dbConf._id)
     }
   }, filter[0].dbConf._id);
 }
-
-
 const inputChanged = (text)=>{
   console.log('table QuickQueryInputChanged:')
-  queryData(window.utoolsCode, text);
+  queryData(window.utoolsCode, text, page, size);
 }
-
 bus.on('_changeCode_', (obj)=>{
-  queryData(window.utoolsCode);
+  console.log('page...', page, size)
+  queryData(window.utoolsCode, null, page, size);
 })
 bus.on('_inputChanged_', ( obj)=>{
   console.log('tableQuickQuery: bus.on(onInputChanged):',obj)
@@ -85,29 +92,25 @@ bus.on('_inputChanged_', ( obj)=>{
     inputChanged(text)
   }
 })
-// bus.on('changeTab', (val) => {
-//   if (val === 'tableQuickQuery') {
-//     utools.setSubInput(({text}) => {
-//       window.onInputChanged(text);
-//     }, 'SQL预查询参数', true);
-//     return true
-//   }
-//   return false
-// })
-
-onActivated(()=>{
-  console.log('activited')
-})
+const pageChanged = (newPage)=>{
+  page = newPage
+  queryData(window.utoolsCode, window.utoolsInput, page, size);
+}
+const sizeChanged = (newSize)=>{
+  size = newSize
+  queryData(window.utoolsCode, window.utoolsInput, page, size);
+}
 </script>
 
 <template>
   <div>
     <div v-if="!sql">无数据，请在utools中输入预查询关键字</div>
     <div>{{sql}}</div>
-    <SQLTable :result="result" :fields="fields" :error-text="errText"></SQLTable>
+    <div>
+      <SQLTable :result="result" :fields="fields" :error-text="errText" :count="count" @page-changed="pageChanged" @size-changed="sizeChanged"></SQLTable>
+    </div>
   </div>
 </template>
 
 <style scoped>
-
 </style>
