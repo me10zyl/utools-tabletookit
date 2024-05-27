@@ -6,6 +6,7 @@ import hook from "@/util/hook.js";
 import {computed, getCurrentInstance, ref, watch, watchEffect} from "vue";
 import {bus} from "@/js/queue.js";
 import TableQuickQuery from "@/components/TableQuickQuery.vue";
+import storage from "@/util/storage.js";
 
 const currentTab = ref('table')
 const tabs = [
@@ -59,7 +60,8 @@ window.onChangeCode = (code) => {
   console.log('MainBoard:window.onChangeCode', code)
   window.utoolsCode = code;
   currentTab.value = getTableNameByCode(code)
-  if(currentTab.value === 'tableQuickQuery'){
+  if(currentTab.value === 'tableQuickQuery' && storage.quickQueryStore().getList().filter(e=>e.keyword === code).length > 0){
+    console.log('set utoolsLastTableQuickQueryCode', code)
     window.utoolsLastTableQuickQueryCode = code;
   }
   console.log('currentTab', currentTab.value)
@@ -76,6 +78,15 @@ const changeTab = (val) => {
     if(label === 'table-quick-query'){
       if(window.utoolsLastTableQuickQueryCode) {
         label = window.utoolsLastTableQuickQueryCode
+        let list = storage.quickQueryStore().getList();
+        console.log('list', list, label)
+        if(list.filter(e=>e.keyword === label).length === 0){
+            console.log('cannot find keyword', label)
+            bus.emit('_reset_', {'tab': 'tableQuickQuery'})
+            return;
+        }else{
+          console.log('redirect', label)
+        }
       }else{
         return
       }
@@ -89,7 +100,7 @@ const changeTab = (val) => {
 
 <template>
   <div class="main-board">
-    <v-card style="height: 100vh">
+    <v-card >
       <v-tabs
           bg-color="primary"
           @update:model-value="changeTab"

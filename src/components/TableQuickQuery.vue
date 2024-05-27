@@ -2,13 +2,14 @@
 import storage from "@/util/storage.js";
 import {bus} from "@/js/queue.js";
 import SQLTable from "@/components/SQLTable.vue";
-import {onActivated, reactive, ref, toRefs} from "vue";
+import {onActivated, reactive, ref, toRefs, watch} from "vue";
 import _ from 'lodash'
 const result = ref([])
 const fields = ref([])
 const sql = ref()
 const errText = ref()
 const count = ref(0)
+const keyword = ref()
 
 let page = 1;
 let size = 10;
@@ -56,6 +57,7 @@ const queryData = (code, params, page, size) => {
       errText.value = err
       result.value = []
       fields.value = []
+      count.value = 0
       return
     }else{
       errText.value = null
@@ -78,11 +80,12 @@ const queryData = (code, params, page, size) => {
 }
 const inputChanged = (text)=>{
   console.log('table QuickQueryInputChanged:')
-  queryData(window.utoolsCode, text, page, size);
+  queryData(window.utoolsLastTableQuickQueryCode, text, page, size);
 }
 bus.on('_changeCode_', (obj)=>{
   console.log('page...', page, size)
-  queryData(window.utoolsCode, null, page, size);
+  keyword.value = window.utoolsLastTableQuickQueryCode
+  queryData(window.utoolsLastTableQuickQueryCode, null, page, size);
 })
 bus.on('_inputChanged_', ( obj)=>{
   console.log('tableQuickQuery: bus.on(onInputChanged):',obj)
@@ -92,19 +95,27 @@ bus.on('_inputChanged_', ( obj)=>{
     inputChanged(text)
   }
 })
+bus.on('_reset_', ()=>{
+  sql.value = ''
+  count.value = 0
+  result.value = []
+  fields.value = []
+  errText.value = ''
+})
 const pageChanged = (newPage)=>{
   page = newPage
-  queryData(window.utoolsCode, window.utoolsInput, page, size);
+  queryData(window.utoolsLastTableQuickQueryCode, window.utoolsInput, page, size);
 }
 const sizeChanged = (newSize)=>{
   size = newSize
-  queryData(window.utoolsCode, window.utoolsInput, page, size);
+  queryData(window.utoolsLastTableQuickQueryCode, window.utoolsInput, page, size);
 }
+
 </script>
 
 <template>
   <div>
-    <div v-if="!sql">无数据，请在utools中输入预查询关键字</div>
+    <div v-if="!sql">查询关键字{{keyword}}无数据，请在utools中输入预查询关键字</div>
     <div>{{sql}}</div>
     <div>
       <SQLTable :result="result" :fields="fields" :error-text="errText" :count="count" @page-changed="pageChanged" @size-changed="sizeChanged"></SQLTable>

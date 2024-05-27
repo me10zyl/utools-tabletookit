@@ -162,6 +162,14 @@ export default {
           let pushColNames = false;
           result.forEach((row) => {
             let newRow = [];
+            for(let k in newRow){
+              if(newRow[k] instanceof Date){
+                newRow[k] = newRow[k].getFullYear() + '-' + ((newRow[k].getMonth() + 1) + '').replace(/\b(\d)$/, '0$1')
+                    + '-' + (newRow[k].getDate() + '').replace(/\b(\d)$/, '0$1') + ' ' +
+                    (newRow[k].getHours() + '').padStart(2, '0') + ':' + (newRow[k].getMinutes() + '').padStart(2, '0') + ':' +
+                    (newRow[k].getSeconds() + '').padStart(2, '0')
+              }
+            }
             this.tableData.datum.push(newRow);
             for (let colName in row) {
               if (colName == '_poolId') {
@@ -215,7 +223,7 @@ export default {
     const debouncedFunc = lodash.debounce((text)=>{
       console.log('debounce ok')
       this.inputChanged(text)
-    }, 300);
+    }, 100);
 
     bus.on('_inputChanged_', ( obj)=>{
       console.log('table: bus.on(onInputChanged)')

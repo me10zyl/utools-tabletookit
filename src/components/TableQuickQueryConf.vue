@@ -101,6 +101,7 @@ export default {
       list.splice(index, 1)
       storage.quickQueryStore().save(list)
       this.lists()
+      hook.reloadFeatures()
     },
     validate() {
       let success = true;
@@ -143,6 +144,9 @@ export default {
   <div class="container mx-auto">
     <v-alert text="关键字重复" type="error" v-if="showAlert"></v-alert>
     <h1 class="text-2xl font-bold mb-4">预查询脚本</h1>
+    <div>
+      通过提前配置一些常用的SQL，可使用Utools的关键字进行快速查询 <span style="color: red">*</span>使用前请先添加数据库配置
+    </div>
     <table class="table-auto w-full" v-if="mode === 'list'">
       <thead v-if="list.length > 0">
       <tr>
@@ -158,7 +162,7 @@ export default {
        px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-purple-500/10">{{ s.keyword }}</span></td>
         <td class="border px-4 py-2">{{ s.desc }}</td>
         <td class="border px-4 py-2">{{ s.sql }}</td>
-        <td class="border px-4 py-2">
+        <td class="border px-1 py-2 w-21">
           <a @click="edit(s)">编辑</a>
           <a @click="deletes(s)" class="ml-5">删除</a>
         </td>
@@ -169,7 +173,7 @@ export default {
       <v-text-field
           name="keyword"
           v-model="submitData.keyword"
-          label="*关键字"
+          label="*关键字 Utools的查询关键字"
           :rules="rules"
           required
       ></v-text-field>
@@ -184,7 +188,7 @@ export default {
       <v-text-field
           name="sql"
           v-model="submitData.sql"
-          label="*SQL语句"
+          label="*SQL语句 使用{}代替可传入参数 如 select * from user where user_id = {}"
           :rules="rules"
           required
       ></v-text-field>

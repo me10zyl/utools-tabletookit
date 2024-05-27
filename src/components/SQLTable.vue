@@ -37,7 +37,7 @@ const totalPage = ref(value)
 
 
 watchEffect(() => {
-  if (props.result && props.fields && props.count) {
+  if (props.result && props.fields) {
     tableData.value.columnNames = props.fields.map((field) => {
       return field.name;
     })
