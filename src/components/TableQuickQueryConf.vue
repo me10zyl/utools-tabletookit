@@ -30,17 +30,18 @@ export default {
     this.lists()
   },
   computed: {
+
+  },
+  methods: {
     dbConfs(){
       let dbConfs = storage.getDbConfs()
       return dbConfs.map(e=>{
-          return {
-            label: e.user + '@' + e.host + ':' + e.port,
-            value: e
-          }
+        return {
+          label: e.user + '@' + e.host + ':' + e.port,
+          value: e
+        }
       })
     },
-  },
-  methods: {
     alert(text){
       this.showAlert = true
       this.alertText = text
@@ -86,6 +87,9 @@ export default {
       if (index === -1) {
         this.alert('找不到该关键字')
         return
+      }
+      if(!storage.checkDbConf(list[index].dbConf._id)){
+          list[index].dbConf = ''
       }
       this.submitData = list[index]
       this.submitData.index = index
@@ -196,8 +200,8 @@ export default {
           v-model="submitData.dbConf"
           item-title="label"
           item-value="value"
-          label="选择数据库配置"
-          :items="dbConfs"
+          label="*选择数据库配置"
+          :items="dbConfs()"
       >
       </v-select>
       <v-btn class="mb-1 mt-3" @click="clickSave" type="submit">保存</v-btn>

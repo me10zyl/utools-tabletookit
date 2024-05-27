@@ -96,6 +96,7 @@ export default {
         dbConf.password = this.password;
         dbConf.port = this.port;
         dbConf.database = this.database;
+        storage.setUpdate()
       } else {
         dbConfs.push({
           _id: new Date().getTime(),

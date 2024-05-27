@@ -35,19 +35,21 @@ let value = Math.ceil(props.count / size.value);
 const totalPage = ref(value)
 
 
-
 watchEffect(() => {
   if (props.result && props.fields) {
     tableData.value.columnNames = props.fields.map((field) => {
       return field.name;
     })
     tableData.value.datum = props.result.map((row) => {
-      for(let k in row){
-        if(row[k] instanceof Date){
-            row[k] = row[k].getFullYear() + '-' + ((row[k].getMonth() + 1) + '').replace(/\b(\d)$/, '0$1')
-                + '-' + (row[k].getDate() + '').replace(/\b(\d)$/, '0$1') + ' ' +
-                (row[k].getHours() + '').padStart(2, '0') + ':' + (row[k].getMinutes() + '').padStart(2, '0') + ':' +
-                (row[k].getSeconds() + '').padStart(2, '0')
+      for (let k in row) {
+        if (k === '_poolId') {
+          delete row[k]
+        }
+        if (row[k] instanceof Date) {
+          row[k] = row[k].getFullYear() + '-' + ((row[k].getMonth() + 1) + '').replace(/\b(\d)$/, '0$1')
+              + '-' + (row[k].getDate() + '').replace(/\b(\d)$/, '0$1') + ' ' +
+              (row[k].getHours() + '').padStart(2, '0') + ':' + (row[k].getMinutes() + '').padStart(2, '0') + ':' +
+              (row[k].getSeconds() + '').padStart(2, '0')
         }
       }
       return row
@@ -68,6 +70,27 @@ watch(page, (newValue, oldValue) => {
 watch(size, (newValue, oldValue) => {
   emit('sizeChanged', newValue)
 })
+
+
+const snackMsg = ref('')
+const openSnack = ref(false)
+
+const currentCol = ref(null)
+const clickRight = (ev) => {
+  console.log('clickRight', ev)
+  isActive.value = true
+  currentCol.value = ev;
+}
+
+const isActive = ref(false)
+
+
+const copy = ()=>{
+  utools.copyText(currentCol.value)
+  openSnack.value = true
+  snackMsg.value = '已复制'
+}
+
 </script>
 
 <template>
@@ -98,13 +121,57 @@ watch(size, (newValue, oldValue) => {
       <tr
           v-for="row in tableData.datum"
           :key="row">
-        <td v-for="col in row">{{ col }}</td>
+        <td v-for="col in row">
+          <v-tooltip :text="col">
+            <template v-slot:activator="{ props }">
+              <span v-bind="props" @click.right="clickRight(col)">{{ col }}</span>
+            </template>
+          </v-tooltip>
+        </td>
       </tr>
       </tbody>
     </v-table>
     <v-pagination :length="totalPage" size="small" style="" v-if="tableData.count > 0"
                   v-model="page"></v-pagination>
   </div>
+
+  <v-dialog max-width="500" v-model="isActive">
+
+    <v-card :title="tableData.columnNames[0]">
+      <v-card-text>
+        {{currentCol}}
+      </v-card-text>
+
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn
+            text="复制"
+            @click="copy"
+        ></v-btn>
+        <v-btn
+            text="关闭"
+            @click="isActive = false"
+        ></v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <v-snackbar
+      v-model="openSnack"
+  >
+    {{ snackMsg }}
+
+    <template v-slot:actions>
+      <v-btn
+          color="pink"
+          variant="text"
+          @click="openSnack = false"
+      >
+        关闭
+      </v-btn>
+    </template>
+  </v-snackbar>
+
 
 </template>
 

@@ -5,6 +5,7 @@ export default {
     // password: this.password
     getDbConfs(){
         let dbConfs = utools.dbStorage.getItem('dbConfs');
+        console.log('dbConfs', dbConfs)
         if (!dbConfs) {
             dbConfs = [];
         }
@@ -13,6 +14,15 @@ export default {
 
     findDbConf(id){
       return this.getDbConfs().find(item => item._id === id)
+    },
+
+    checkDbConf(id){
+        console.log('checkDbConf', id)
+        return this.findDbConf(id) != null
+    },
+
+    setUpdate(){
+        utools.dbStorage.setItem('needUpdatePool', true)
     },
 
     quickQueryStore() {
@@ -28,6 +38,7 @@ export default {
                 } else {
                     list = JSON.parse(list)
                 }
+                console.log('getList', list)
                 return list
             },
         }

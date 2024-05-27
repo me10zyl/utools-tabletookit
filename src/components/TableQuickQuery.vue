@@ -10,12 +10,18 @@ const sql = ref()
 const errText = ref()
 const count = ref(0)
 const keyword = ref()
+const myErr = ref()
 
 let page = 1;
 let size = 10;
 
 function reset(){
   errText.value = ''
+  myErr.value = ''
+  sql.value = ''
+  result.value = []
+  fields.value = []
+  count.value = 0
 }
 function rebuildSQL(sql, page, size){
     if(!sql.includes('limit')){
@@ -30,15 +36,22 @@ const queryData = (code, params, page, size) => {
   if(!code){
     return;
   }
+  reset()
   console.log('startQueryData,code', code, page,size)
   let list = storage.quickQueryStore().getList()
   console.log(list, 'list')
   let filter = list.filter(e => e.keyword === code.trim());
   if (filter.length === 0) {
+    myErr.value = '预查询找不到关键字：' + code
     console.log('not found keyword:' + code.trim())
     return
   }
-  reset()
+  console.log('111')
+  if(!storage.checkDbConf(filter[0].dbConf._id)){
+    console.log('222', filter[0])
+    myErr.value = '该条数据库配置已被删除，请重新选择：' + filter[0].dbConf.user + '@' + filter[0].dbConf.host + ":" + filter[0].dbConf.port
+    return
+  }
   let sql1 = filter[0].sql;
   console.log('prepared', sql1)
   sql.value = sql1
@@ -115,7 +128,8 @@ const sizeChanged = (newSize)=>{
 
 <template>
   <div>
-    <div v-if="!sql">查询关键字{{keyword}}无数据，请在utools中输入预查询关键字</div>
+    <div v-if="!sql && !myErr">查询关键字{{keyword}}无数据，请在utools中输入预查询关键字</div>
+    <div v-if="myErr">{{myErr}}</div>
     <div>{{sql}}</div>
     <div>
       <SQLTable :result="result" :fields="fields" :error-text="errText" :count="count" @page-changed="pageChanged" @size-changed="sizeChanged"></SQLTable>

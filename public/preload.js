@@ -21,6 +21,10 @@ const createPools = () => {
     if (!dbConfs || dbConfs.length === 0) {
         return;
     }
+    let needUpdatePool = utools.dbStorage.getItem('needUpdatePool');
+    if(needUpdatePool){
+        pools = []
+    }
     dbConfs.forEach((conf) => {
         if (pools.filter(e => e._id === conf._id).length === 0) {
             console.log('createPool', conf)
@@ -34,6 +38,7 @@ const createPools = () => {
             })
         }
     })
+    utools.dbStorage.setItem('needUpdatePool', false)
 }
 window.removeFromPool = function (id) {
     console.log('removeFromPool', id)
@@ -46,7 +51,7 @@ window.removeFromPool = function (id) {
     }
     pools.splice(deleteIndex, 1);
 }
-const getPoolFromId = function (id){
+window.getPoolFromId = function (id){
     let index = pools.findIndex(e => e._id === id);
     let r = pools.filter(e => e._id === id);
     return r.length > 0 ? r[0] : null;
@@ -59,7 +64,7 @@ window.mysql = {
         }
         let selectPools = pools;
         if(specificPoolId){
-            selectPools = [getPoolFromId(specificPoolId)];
+            selectPools = [window.getPoolFromId(specificPoolId)];
         }
         Promise.all(selectPools.map((pool) => {
             return new Promise((resolve, reject) => {
