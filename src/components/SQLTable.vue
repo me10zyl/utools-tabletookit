@@ -1,5 +1,6 @@
 <script setup>
 import {ref, toRef, watch, watchEffect} from "vue";
+import {ca} from "vuetify/locale";
 
 const props = defineProps({
   result: {
@@ -17,6 +18,10 @@ const props = defineProps({
   count: {
     type: Number,
     default: () => 0
+  },
+  currentConf:{
+    type: Object,
+    default: null
   }
 })
 
@@ -76,10 +81,12 @@ const snackMsg = ref('')
 const openSnack = ref(false)
 
 const currentCol = ref(null)
-const clickRight = (ev) => {
-  console.log('clickRight', ev)
+const currentRow = ref(null)
+const clickRight = (col, row) => {
+  console.log('clickRight', row)
   isActive.value = true
-  currentCol.value = ev;
+  currentCol.value = col;
+  currentRow.value = row;
 }
 
 const isActive = ref(false)
@@ -91,6 +98,21 @@ const copy = ()=>{
   snackMsg.value = '已复制'
 }
 
+const execJs = (row, col)=>{
+  if(props.currentConf) {
+    let string;
+    try {
+      string = eval(props.currentConf.jsScript)
+    }catch (e){
+      openSnack.value = true
+      snackMsg.value = '执行出错:' + e
+      return
+    }
+    utools.copyText(string + '')
+    openSnack.value = true
+    snackMsg.value = '已复制 ' + string
+  }
+}
 </script>
 
 <template>
@@ -124,7 +146,7 @@ const copy = ()=>{
         <td v-for="col in row">
           <v-tooltip :text="col">
             <template v-slot:activator="{ props }">
-              <span v-bind="props" @click.right="clickRight(col)">{{ col }}</span>
+              <span v-bind="props" @click.right="clickRight(col, row)">{{ col }}</span>
             </template>
           </v-tooltip>
         </td>
@@ -144,6 +166,11 @@ const copy = ()=>{
 
       <v-card-actions>
         <v-spacer></v-spacer>
+        <v-btn
+            v-if="props.currentConf"
+            text="执行JS并复制"
+            @click="execJs(currentRow, currentCol)"
+        ></v-btn>
         <v-btn
             text="复制"
             @click="copy"

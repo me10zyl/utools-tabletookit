@@ -204,6 +204,11 @@ export default {
           :items="dbConfs()"
       >
       </v-select>
+      <v-text-field
+          v-model="submitData.jsScript"
+          label="针对每一行点击复制执行的js脚本，数据库行的本地变量是row，如 row['id'], 列的本地变量是col"
+          required
+      ></v-text-field>
       <v-btn class="mb-1 mt-3" @click="clickSave" type="submit">保存</v-btn>
       <v-btn class="mb-1 mt-3 ml-3" @click="mode = 'list'">取消</v-btn>
     </v-form>

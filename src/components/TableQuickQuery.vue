@@ -11,6 +11,7 @@ const errText = ref()
 const count = ref(0)
 const keyword = ref()
 const myErr = ref()
+const currentConf = ref()
 
 let page = 1;
 let size = 10;
@@ -65,6 +66,7 @@ const queryData = (code, params, page, size) => {
   }
   console.log('queryData', sql1)
   sql.value = sql1
+  currentConf.value = filter[0];
   mysql.query(rebuildSQL(sql1, page, size), (err, result1, fields1) => {
     if(err){
       errText.value = err
@@ -132,7 +134,7 @@ const sizeChanged = (newSize)=>{
     <div v-if="myErr">{{myErr}}</div>
     <div>{{sql}}</div>
     <div>
-      <SQLTable :result="result" :fields="fields" :error-text="errText" :count="count" @page-changed="pageChanged" @size-changed="sizeChanged"></SQLTable>
+      <SQLTable :result="result" :fields="fields" :error-text="errText" :count="count" @page-changed="pageChanged" @size-changed="sizeChanged" :current-conf="currentConf"></SQLTable>
     </div>
   </div>
 </template>
